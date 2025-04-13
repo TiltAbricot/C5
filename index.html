@@ -126,6 +126,7 @@
     const selected = new Set();
 
     let rootIndex = 0;
+    let selectedNotes = new Set(); // Store note names, not indexes
 
     notes.forEach(note => {
       const option = document.createElement("option");
@@ -144,7 +145,7 @@
     }
 
     function updateSelection() {
-      selected.clear();
+      selectedNotes.clear();
       const third = thirdSelect.value;
       const fifth = fifthSelect.value;
       const seventh = seventhSelect.value;
@@ -157,38 +158,74 @@
       if (fifth === "#5") intervals.push(8);
       if (seventh === "7") intervals.push(10);
       if (seventh === "M7") intervals.push(11);
+      intervals.unshift(0);
 
-      intervals.unshift(0); // root always included
-      intervals.forEach(semitone => selected.add((rootIndex + semitone) % 12));
+      intervals.forEach(semitone => {
+        const index = (rootIndex + semitone) % 12;
+        selectedNotes.add(notes[index]);
+      });
       displaySelectionInfo();
       draw();
     }
 
     function updateScaleSelection() {
-      selected.clear();
+      selectedNotes.clear();
       const semitones = scaleSelect.value.split(",").map(n => parseInt(n));
-      semitones.forEach(semitone => selected.add((rootIndex + semitone) % 12));
+      semitones.forEach(semitone => {
+        const index = (rootIndex + semitone) % 12;
+        selectedNotes.add(notes[index]);
+      });
       displaySelectionInfo();
       draw();
     }
 
     function changeFundamentalOnly() {
       rootIndex = notes.indexOf(rootSelect.value);
-      if (modeToggle.value === "chord") updateSelection();
-      else updateScaleSelection();
+      displaySelectionInfo();
+      draw();
     }
 
     function displaySelectionInfo() {
+      const selectedIndexes = Array.from(selectedNotes).map(n => notes.indexOf(n));
+      const relativeSemitones = selectedIndexes.map(i => (i - rootIndex + 12) % 12).sort((a, b) => a - b).join(",");
+
+      const knownPatterns = {
+        "0,3,6": "Diminished",
+        "0,3,7": "Minor",
+        "0,4,7": "Major",
+        "0,4,8": "Augmented",
+        "0,5,7": "Sus4",
+        "0,2,7": "Sus2",
+        "0,4,7,11": "Major 7",
+        "0,3,7,10": "Minor 7",
+        "0,4,7,10": "Dominant 7",
+        "0,3,6,10": "Half-Diminished",
+        "0,3,6,9": "Diminished 7",
+        "0,4,7,9": "6",
+        "0,2,4,7": "Add9",
+        "0,2,4,5,7,9,11": "Major Scale",
+        "0,2,3,5,7,9,10": "Minor Scale",
+        "0,2,3,5,7,9,11": "Dorian",
+        "0,2,4,6,7,9,11": "Lydian",
+        "0,1,3,5,7,8,10": "Phrygian",
+        "0,2,4,5,7,9,10": "Mixolydian",
+        "0,1,3,5,6,8,10": "Locrian",
+        "0,2,4,7,9": "Major Pentatonic",
+        "0,3,5,7,10": "Minor Pentatonic",
+        "0,3,5,6,7,10": "Blues"
+      };
+
       const root = notes[rootIndex];
-      const selectedNotes = Array.from(selected).sort((a, b) => a - b).map(i => notes[i]);
-      chordNameDisplay.textContent = `${root} Selection → [${selectedNotes.join(", ")}]`;
+      const label = knownPatterns[relativeSemitones] ? `${root} ${knownPatterns[relativeSemitones]}` : `${root} Custom`;
+      chordNameDisplay.textContent = label;
     }
 
     function draw() {
       svg.innerHTML = "";
 
-      if (selected.size >= 2) {
-        const sortedIndexes = Array.from(selected).sort((a, b) => a - b);
+      const selectedIndexes = Array.from(selectedNotes).map(n => notes.indexOf(n));
+      if (selectedIndexes.length >= 2) {
+        const sortedIndexes = [...selectedIndexes].sort((a, b) => a - b);
         const points = sortedIndexes.map(i => getCoords(i).join(",")).join(" ");
         const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         polygon.setAttribute("points", points);
@@ -197,17 +234,16 @@
 
       notes.forEach((note, i) => {
         const [x, y] = getCoords(i);
-
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute("cx", x);
         circle.setAttribute("cy", y);
         circle.setAttribute("r", 20);
         circle.classList.add("note");
         if (i === rootIndex) circle.classList.add("fundamental");
-        circle.style.fill = selected.has(i) ? "lightblue" : "white";
+        circle.style.fill = selectedNotes.has(note) ? "lightblue" : "white";
         circle.addEventListener("click", () => {
-          if (selected.has(i)) selected.delete(i);
-          else selected.add(i);
+          if (selectedNotes.has(note)) selectedNotes.delete(note);
+          else selectedNotes.add(note);
           displaySelectionInfo();
           draw();
         });
