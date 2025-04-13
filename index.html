@@ -45,9 +45,10 @@
 function draw() {
   svg.innerHTML = "";
 
-  // Draw selected polygon
+  // Draw selected polygon (sorted order)
   if (selected.size >= 2) {
-    const points = Array.from(selected).map(i => getCoords(i).join(",")).join(" ");
+    const sortedIndexes = Array.from(selected).sort((a, b) => a - b);
+    const points = sortedIndexes.map(i => getCoords(i).join(",")).join(" ");
     const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
     polygon.setAttribute("points", points);
     svg.appendChild(polygon);
