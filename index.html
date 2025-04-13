@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Circle of Fifths</title>
+  <style>
+    svg {
+      width: 500px;
+      height: 500px;
+      display: block;
+      margin: auto;
+    }
+    circle.note {
+      fill: white;
+      stroke: black;
+      cursor: pointer;
+    }
+    text {
+      font-size: 14px;
+      text-anchor: middle;
+      alignment-baseline: middle;
+      pointer-events: none;
+    }
+    polygon {
+      fill: rgba(100, 150, 255, 0.4);
+      stroke: #6495ed;
+      stroke-width: 2;
+    }
+  </style>
+</head>
+<body>
+  <svg id="circle"></svg>
+  <script>
+    const svg = document.getElementById("circle");
+    const notes = ["C", "G", "D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F"];
+    const center = 250;
+    const radius = 200;
+    const selected = new Set();function getCoords(i) {
+  const angle = (Math.PI * 2 * i / notes.length) - Math.PI / 2;
+  return [
+    center + radius * Math.cos(angle),
+    center + radius * Math.sin(angle)
+  ];
+}
+
+function draw() {
+  svg.innerHTML = "";
+
+  // Draw selected polygon
+  if (selected.size >= 2) {
+    const points = Array.from(selected).map(i => getCoords(i).join(",")).join(" ");
+    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    polygon.setAttribute("points", points);
+    svg.appendChild(polygon);
+  }
+
+  // Draw notes
+  notes.forEach((note, i) => {
+    const [x, y] = getCoords(i);
+
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.setAttribute("r", 20);
+    circle.classList.add("note");
+    circle.style.fill = selected.has(i) ? "lightblue" : "white";
+    circle.addEventListener("click", () => {
+      if (selected.has(i)) selected.delete(i);
+      else selected.add(i);
+      draw();
+    });
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", x);
+    label.setAttribute("y", y);
+    label.textContent = note;
+
+    svg.appendChild(circle);
+    svg.appendChild(label);
+  });
+}
+
+draw();
+
+  </script>
+</body>
+</html>
