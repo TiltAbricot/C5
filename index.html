@@ -43,7 +43,7 @@
     label {
       font-weight: bold;
     }
-    select {
+    select, button {
       padding: 0.5em;
       font-size: 16px;
     }
@@ -52,30 +52,75 @@
       font-weight: bold;
       margin-top: 1em;
     }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <svg id="circle"></svg>  <div class="controls">
-    <label for="root-select">Chord Root</label>
-    <select id="root-select"></select><label for="type-select">Chord Type</label>
-<select id="type-select">
-  <option value="major">Major</option>
-  <option value="minor">Minor</option>
-  <option value="augmented">Augmented</option>
-  <option value="diminished">Diminished</option>
+    <label for="root-select">Fundamental</label>
+    <select id="root-select"></select><label for="mode-toggle">Mode</label>
+<select id="mode-toggle">
+  <option value="chord">Chord</option>
+  <option value="scale">Scale/Mode</option>
 </select>
+
+<div id="chord-controls">
+  <label for="third">Third</label>
+  <select id="third">
+    <option value="none">None</option>
+    <option value="3">Major Third</option>
+    <option value="b3">Minor Third</option>
+  </select>
+
+  <label for="fifth">Fifth</label>
+  <select id="fifth">
+    <option value="none">None</option>
+    <option value="5">Perfect Fifth</option>
+    <option value="b5">Diminished Fifth</option>
+    <option value="#5">Augmented Fifth</option>
+  </select>
+
+  <label for="seventh">Seventh</label>
+  <select id="seventh">
+    <option value="none">None</option>
+    <option value="7">Minor 7th</option>
+    <option value="M7">Major 7th</option>
+  </select>
+</div>
+
+<div id="scale-controls" class="hidden">
+  <label for="scale-select">Scale/Mode</label>
+  <select id="scale-select">
+    <option value="0,2,4,5,7,9,11">Major Scale (Ionian)</option>
+    <option value="0,2,3,5,7,9,10">Natural Minor (Aeolian)</option>
+    <option value="0,2,3,5,7,9,11">Dorian</option>
+    <option value="0,2,4,6,7,9,11">Lydian</option>
+    <option value="0,1,3,5,7,8,10">Phrygian</option>
+    <option value="0,2,4,5,7,9,10">Mixolydian</option>
+    <option value="0,1,3,5,6,8,10">Locrian</option>
+    <option value="0,2,4,7,9">Major Pentatonic</option>
+    <option value="0,3,5,7,10">Minor Pentatonic</option>
+    <option value="0,3,5,6,7,10">Blues Scale</option>
+  </select>
+</div>
 
 <div id="chord-name"></div>
 
   </div>  <script>
     const svg = document.getElementById("circle");
     const rootSelect = document.getElementById("root-select");
-    const typeSelect = document.getElementById("type-select");
+    const modeToggle = document.getElementById("mode-toggle");
+    const thirdSelect = document.getElementById("third");
+    const fifthSelect = document.getElementById("fifth");
+    const seventhSelect = document.getElementById("seventh");
+    const scaleSelect = document.getElementById("scale-select");
     const chordNameDisplay = document.getElementById("chord-name");
+    const chordControls = document.getElementById("chord-controls");
+    const scaleControls = document.getElementById("scale-controls");
 
     const notes = ["C", "G", "D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F"];
-    const chromatic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-
     const center = 250;
     const radius = 200;
     const selected = new Set();
@@ -98,57 +143,45 @@
       ];
     }
 
-    function updateChordSelection() {
+    function updateSelection() {
       selected.clear();
-      const root = rootSelect.value;
-      const type = typeSelect.value;
-      rootIndex = notes.indexOf(root);
-      if (rootIndex === -1) return;
+      const third = thirdSelect.value;
+      const fifth = fifthSelect.value;
+      const seventh = seventhSelect.value;
 
-      const intervals = {
-        major: [0, 4, 7],
-        minor: [0, 3, 7],
-        augmented: [0, 4, 8],
-        diminished: [0, 3, 6]
-      };
+      const intervals = [];
+      if (third === "3") intervals.push(4);
+      if (third === "b3") intervals.push(3);
+      if (fifth === "5") intervals.push(7);
+      if (fifth === "b5") intervals.push(6);
+      if (fifth === "#5") intervals.push(8);
+      if (seventh === "7") intervals.push(10);
+      if (seventh === "M7") intervals.push(11);
 
-      intervals[type].forEach(semitone => {
-        const index = (rootIndex + semitone) % 12;
-        selected.add(index);
-      });
-
+      intervals.unshift(0); // root always included
+      intervals.forEach(semitone => selected.add((rootIndex + semitone) % 12));
       displaySelectionInfo();
       draw();
     }
 
+    function updateScaleSelection() {
+      selected.clear();
+      const semitones = scaleSelect.value.split(",").map(n => parseInt(n));
+      semitones.forEach(semitone => selected.add((rootIndex + semitone) % 12));
+      displaySelectionInfo();
+      draw();
+    }
+
+    function changeFundamentalOnly() {
+      rootIndex = notes.indexOf(rootSelect.value);
+      if (modeToggle.value === "chord") updateSelection();
+      else updateScaleSelection();
+    }
+
     function displaySelectionInfo() {
-      const selectedNotes = Array.from(selected).sort((a, b) => a - b).map(i => notes[i]);
       const root = notes[rootIndex];
-
-      const fundamentalName = chromatic[(chromatic.indexOf(root.replace("#", "#").replace("b", "")) + 12) % 12];
-      const relativeSemitones = Array.from(selected)
-        .map(i => (i - rootIndex + 12) % 12)
-        .sort((a, b) => a - b)
-        .join(",");
-
-      const knownPatterns = {
-        "0,3,6": "Diminished",
-        "0,3,7": "Minor",
-        "0,4,7": "Major",
-        "0,4,8": "Augmented",
-        "0,2,4,5,7,9,11": "Major Scale",
-        "0,2,3,5,7,9,10": "Minor Scale (Aeolian)",
-        "0,2,3,5,7,9,11": "Dorian",
-        "0,2,4,6,7,9,11": "Lydian",
-        "0,1,3,5,7,8,10": "Phrygian",
-        "0,2,4,5,7,9,10": "Mixolydian",
-        "0,1,3,5,6,8,10": "Locrian"
-      };
-
-      const match = knownPatterns[relativeSemitones];
-      const label = match ? `${fundamentalName} ${match}` : `${root} Custom → [${selectedNotes.join(", ")}]`;
-
-      chordNameDisplay.textContent = label;
+      const selectedNotes = Array.from(selected).sort((a, b) => a - b).map(i => notes[i]);
+      chordNameDisplay.textContent = `${root} Selection → [${selectedNotes.join(", ")}]`;
     }
 
     function draw() {
@@ -189,11 +222,26 @@
       });
     }
 
-    rootSelect.addEventListener("change", updateChordSelection);
-    typeSelect.addEventListener("change", updateChordSelection);
+    modeToggle.addEventListener("change", () => {
+      if (modeToggle.value === "chord") {
+        chordControls.classList.remove("hidden");
+        scaleControls.classList.add("hidden");
+        updateSelection();
+      } else {
+        scaleControls.classList.remove("hidden");
+        chordControls.classList.add("hidden");
+        updateScaleSelection();
+      }
+    });
+
+    rootSelect.addEventListener("change", changeFundamentalOnly);
+    thirdSelect.addEventListener("change", updateSelection);
+    fifthSelect.addEventListener("change", updateSelection);
+    seventhSelect.addEventListener("change", updateSelection);
+    scaleSelect.addEventListener("change", updateScaleSelection);
 
     rootSelect.value = "C";
-    typeSelect.value = "major";
-    updateChordSelection();
+    modeToggle.value = "chord";
+    updateSelection();
   </script></body>
 </html>
