@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.9.2) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.9.4) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,7 +97,7 @@
     <input type="number" id="shape-id-input" placeholder="Enter shape decimal ID" />
     <button id="add-shape-by-id">Add Shape by ID</button>
     </div>
-    <div id="app-version">Version: 0.1.9.2</div>
+    <div id="app-version">Version: 0.1.9.4</div>
   </div>
 
   <script>
@@ -190,11 +190,6 @@
   displaySelectionInfo();
   draw();
 });
-  const color = shapeColors[savedShapes.length % shapeColors.length];
-  savedShapes.push({ notes, color });
-  updateShapeList();
-  draw();
-});
 });
           
 const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -202,7 +197,6 @@ const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
         label.setAttribute("y", y);
         label.textContent = note;
         svg.appendChild(circle);
-        svg.appendChild(label);
         svg.appendChild(label);
       });
     }
