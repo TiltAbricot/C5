@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.2.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.2.2) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +28,7 @@
     <button id="add-shape-by-id">Add Shape by ID</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.2.0</div>
+    <div id="app-version">Version: 0.2.2</div>
   </div>
   <script>
     const svg = document.getElementById("circle");
@@ -130,8 +130,35 @@
           update();
         };
 
-        const mergeBtn = document.createElement("button");
-        mergeBtn.textContent = "+";
+        const rotateLeftBtn = document.createElement("button");
+        rotateLeftBtn.textContent = "⟲";
+        rotateLeftBtn.title = "Rotate Left";
+        rotateLeftBtn.onclick = () => {
+          const rotated = new Set();
+          circleFifths.forEach((note, i) => {
+            const prev = circleFifths[(i + 1) % 12];
+            if (notes.has(prev)) rotated.add(note);
+          });
+          savedShapes[index].notes = rotated;
+          updateShapeList();
+          update();
+        };
+
+        const rotateRightBtn = document.createElement("button");
+        rotateRightBtn.textContent = "⟳";
+        rotateRightBtn.title = "Rotate Right";
+        rotateRightBtn.onclick = () => {
+          const rotated = new Set();
+          circleFifths.forEach((note, i) => {
+            const next = circleFifths[(i + 11) % 12];
+            if (notes.has(next)) rotated.add(note);
+          });
+          savedShapes[index].notes = rotated;
+          updateShapeList();
+          update();
+        };
+
+        
         mergeBtn.onclick = () => {
           notes.forEach(n => selectedNotes.add(n));
           update();
@@ -145,8 +172,10 @@
           update();
         };
 
-        div.appendChild(span);
-        div.appendChild(mergeBtn);
+        
+        div.appendChild(rotateLeftBtn);
+        div.appendChild(rotateRightBtn);
+        
         div.appendChild(delBtn);
         shapeList.appendChild(div);
       });
