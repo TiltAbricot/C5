@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.7) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.8) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,8 +93,10 @@
     <button id="clear-button">Clear Selection</button>
     <button id="clear-all">Clear All Shapes</button>
     <div id="chord-name"></div>
-    <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.1.7</div>
+    <div class="shape-list" id="shape-list"><input type="number" id="shape-id-input" placeholder="Enter shape decimal ID" />
+    <button id="add-shape-by-id">Add Shape by ID</button>
+    </div>
+    <div id="app-version">Version: 0.1.8</div>
   </div>
 
   <script>
@@ -182,7 +184,22 @@
           if (selectedNotes.has(note)) selectedNotes.delete(note);
           else selectedNotes.add(note);
           displaySelectionInfo();
-          draw();
+          document.getElementById("add-shape-by-id").addEventListener("click", () => {
+  const input = document.getElementById("shape-id-input");
+  const decimal = parseInt(input.value);
+  if (isNaN(decimal)) return;
+  const binary = decimal.toString(2).padStart(12, "0");
+  const notes = new Set();
+  [...binary].forEach((bit, i) => {
+    if (bit === "1") notes.add(circleFifths[i]);
+  });
+  const color = shapeColors[savedShapes.length % shapeColors.length];
+  savedShapes.push({ notes, color });
+  updateShapeList();
+  draw();
+});
+
+draw();
         });
         const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
         label.setAttribute("x", x);
