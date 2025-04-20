@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.2.2) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.2.3) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +28,7 @@
     <button id="add-shape-by-id">Add Shape by ID</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.2.2</div>
+    <div id="app-version">Version: 0.2.3</div>
   </div>
   <script>
     const svg = document.getElementById("circle");
@@ -158,7 +158,9 @@
           update();
         };
 
-        
+        const mergeBtn = document.createElement("button");
+        mergeBtn.textContent = "+";
+        mergeBtn.title = "Merge with Current";
         mergeBtn.onclick = () => {
           notes.forEach(n => selectedNotes.add(n));
           update();
@@ -166,18 +168,20 @@
 
         const delBtn = document.createElement("button");
         delBtn.textContent = "✖";
+        delBtn.title = "Delete Shape";
         delBtn.onclick = () => {
           savedShapes.splice(index, 1);
           updateShapeList();
           update();
         };
 
-        
+        div.appendChild(span);
         div.appendChild(rotateLeftBtn);
+        div.appendChild(mergeBtn);
         div.appendChild(rotateRightBtn);
-        
         div.appendChild(delBtn);
         shapeList.appendChild(div);
+      });
       });
     }
 
