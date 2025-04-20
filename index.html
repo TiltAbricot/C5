@@ -34,8 +34,6 @@
       pointer-events: none;
     }
     polygon {
-      fill: rgba(100, 150, 255, 0.4);
-      stroke: #6495ed;
       stroke-width: 2;
     }
     .controls {
@@ -59,9 +57,6 @@
       margin-top: 1em;
       text-align: center;
     }
-    .hidden {
-      display: none;
-    }
     #app-version {
       margin-top: 1em;
       color: gray;
@@ -82,8 +77,6 @@
       border-radius: 5px;
     }
     .shape-item button {
-      background: red;
-      color: white;
       border: none;
       padding: 2px 6px;
       border-radius: 3px;
@@ -94,190 +87,74 @@
 </head>
 <body>
   <svg id="circle"></svg>
-
   <div class="controls">
-    <label for="root-select">Fundamental</label>
-    <select id="root-select"></select>
-
-    <label for="mode-toggle">Mode</label>
-    <select id="mode-toggle">
-      <option value="chord">Chord</option>
-      <option value="scale">Scale/Mode</option>
-    </select>
-
-    <div id="chord-controls">
-      <label for="third">Third</label>
-      <select id="third">
-        <option value="none">None</option>
-        <option value="3">Major Third</option>
-        <option value="b3">Minor Third</option>
-      </select>
-
-      <label for="fifth">Fifth</label>
-      <select id="fifth">
-        <option value="none">None</option>
-        <option value="5">Perfect Fifth</option>
-        <option value="b5">Diminished Fifth</option>
-        <option value="#5">Augmented Fifth</option>
-      </select>
-
-      <label for="seventh">Seventh</label>
-      <select id="seventh">
-        <option value="none">None</option>
-        <option value="7">Minor 7th</option>
-        <option value="M7">Major 7th</option>
-      </select>
-    </div>
-
-    <div id="scale-controls" class="hidden">
-      <label for="scale-select">Scale/Mode</label>
-      <select id="scale-select">
-        <option value="0,2,4,5,7,9,11">Major Scale (Ionian)</option>
-        <option value="0,2,3,5,7,9,10">Natural Minor (Aeolian)</option>
-        <option value="0,2,3,5,7,9,11">Dorian</option>
-        <option value="0,2,4,6,7,9,11">Lydian</option>
-        <option value="0,1,3,5,7,8,10">Phrygian</option>
-        <option value="0,2,4,5,7,9,10">Mixolydian</option>
-        <option value="0,1,3,5,6,8,10">Locrian</option>
-        <option value="0,2,4,7,9">Major Pentatonic</option>
-        <option value="0,3,5,7,10">Minor Pentatonic</option>
-        <option value="0,3,5,6,7,10">Blues Scale</option>
-      </select>
-    </div>
-
     <button id="save-shape">Save Shape</button>
     <button id="clear-button">Clear Selection</button>
     <button id="clear-all">Clear All Shapes</button>
-
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.1.3</div>
+    <div id="app-version">Version: 0.1.5</div>
   </div>
 
   <script>
     const svg = document.getElementById("circle");
-    const rootSelect = document.getElementById("root-select");
-    const modeToggle = document.getElementById("mode-toggle");
-    const thirdSelect = document.getElementById("third");
-    const fifthSelect = document.getElementById("fifth");
-    const seventhSelect = document.getElementById("seventh");
-    const scaleSelect = document.getElementById("scale-select");
-    const chordNameDisplay = document.getElementById("chord-name");
-    const chordControls = document.getElementById("chord-controls");
-    const scaleControls = document.getElementById("scale-controls");
+    const saveShapeButton = document.getElementById("save-shape");
+    const clearAllButton = document.getElementById("clear-all");
+    const clearButton = document.getElementById("clear-button");
     const shapeList = document.getElementById("shape-list");
+    const chordNameDisplay = document.getElementById("chord-name");
 
     const chromatic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
     const circleFifths = Array.from({ length: 12 }, (_, i) => chromatic[(0 + i * 7) % 12]);
     const selectedNotes = new Set();
     const savedShapes = [];
+    const shapeColors = [
+      "rgba(100,150,255,0.4)",
+      "rgba(255,100,100,0.4)",
+      "rgba(100,255,150,0.4)",
+      "rgba(255,255,100,0.4)",
+      "rgba(200,100,255,0.4)",
+      "rgba(255,150,150,0.4)",
+      "rgba(150,255,255,0.4)"
+    ];
+
     const center = 200;
     const radius = 170;
-
     let rootIndex = 0;
-
-    chromatic.forEach(note => {
-      const option = document.createElement("option");
-      option.value = note;
-      option.textContent = note;
-      rootSelect.appendChild(option);
-    });
 
     function getCoords(note) {
       const i = circleFifths.indexOf(note);
-      const position = (i - circleFifths.indexOf(chromatic[rootIndex]) + 12) % 12;
-      const angle = (Math.PI * 2 * position / 12) - Math.PI / 2;
+      const angle = (Math.PI * 2 * i / 12) - Math.PI / 2;
       return [
         center + radius * Math.cos(angle),
         center + radius * Math.sin(angle)
       ];
     }
 
-    function updateSelection() {
-      selectedNotes.clear();
-      const third = thirdSelect.value;
-      const fifth = fifthSelect.value;
-      const seventh = seventhSelect.value;
-      const intervals = [0];
-      if (third === "3") intervals.push(4);
-      if (third === "b3") intervals.push(3);
-      if (fifth === "5") intervals.push(7);
-      if (fifth === "b5") intervals.push(6);
-      if (fifth === "#5") intervals.push(8);
-      if (seventh === "7") intervals.push(10);
-      if (seventh === "M7") intervals.push(11);
-      intervals.forEach(semi => selectedNotes.add(chromatic[(rootIndex + semi) % 12]));
-      displaySelectionInfo();
-      draw();
-    }
-
-    function updateScaleSelection() {
-      selectedNotes.clear();
-      scaleSelect.value.split(",").map(n => parseInt(n)).forEach(semi => {
-        selectedNotes.add(chromatic[(rootIndex + semi) % 12]);
-      });
-      displaySelectionInfo();
-      draw();
-    }
-
-    function changeFundamentalOnly() {
-      rootIndex = chromatic.indexOf(rootSelect.value);
-      displaySelectionInfo();
-      draw();
-    }
-
     function displaySelectionInfo() {
       const intervals = Array.from(selectedNotes).map(n => (chromatic.indexOf(n) - rootIndex + 12) % 12).sort((a, b) => a - b);
-      const pattern = intervals.join(",");
-      const knownPatterns = {
-        "0,3,6": "Diminished",
-        "0,3,7": "Minor",
-        "0,4,7": "Major",
-        "0,4,8": "Augmented",
-        "0,5,7": "Sus4",
-        "0,2,7": "Sus2",
-        "0,4,7,11": "Major 7",
-        "0,3,7,10": "Minor 7",
-        "0,4,7,10": "Dominant 7",
-        "0,3,6,10": "Half-Diminished",
-        "0,3,6,9": "Diminished 7",
-        "0,4,7,9": "6",
-        "0,2,4,7": "Add9",
-        "0,2,4,5,7,9,11": "Major Scale",
-        "0,2,3,5,7,9,10": "Minor Scale",
-        "0,2,3,5,7,9,11": "Dorian",
-        "0,2,4,6,7,9,11": "Lydian",
-        "0,1,3,5,7,8,10": "Phrygian",
-        "0,2,4,5,7,9,10": "Mixolydian",
-        "0,1,3,5,6,8,10": "Locrian",
-        "0,2,4,7,9": "Major Pentatonic",
-        "0,3,5,7,10": "Minor Pentatonic",
-        "0,3,5,6,7,10": "Blues"
-      };
-      const label = knownPatterns[pattern] ? `${chromatic[rootIndex]} ${knownPatterns[pattern]}` : `${chromatic[rootIndex]} Custom`;
-      chordNameDisplay.textContent = label;
+      chordNameDisplay.textContent = intervals.length ? `Selected: ${intervals.join(", ")}` : "";
     }
 
     function draw() {
       svg.innerHTML = "";
-
-      // Draw saved shapes
-      savedShapes.forEach(shape => {
-        const coords = circleFifths.filter(n => shape.has(n)).map(n => getCoords(n));
+      savedShapes.forEach(({ notes, color }) => {
+        const coords = circleFifths.filter(n => notes.has(n)).map(n => getCoords(n));
         if (coords.length >= 2) {
-          const points = coords.map(([x, y]) => `${x},${y}`).join(" ");
           const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-          polygon.setAttribute("points", points);
+          polygon.setAttribute("points", coords.map(([x, y]) => `${x},${y}`).join(" "));
+          polygon.setAttribute("fill", color);
+          polygon.setAttribute("stroke", color.replace(/0\.4\)$/, "1)"));
           svg.appendChild(polygon);
         }
       });
 
-      // Draw current shape
       const coords = circleFifths.filter(n => selectedNotes.has(n)).map(n => [n, ...getCoords(n)]);
       if (coords.length >= 2) {
-        const points = coords.map(c => `${c[1]},${c[2]}`).join(" ");
         const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        polygon.setAttribute("points", points);
+        polygon.setAttribute("points", coords.map(c => `${c[1]},${c[2]}`).join(" "));
+        polygon.setAttribute("fill", "rgba(150,150,150,0.4)");
+        polygon.setAttribute("stroke", "gray");
         svg.appendChild(polygon);
       }
 
@@ -288,7 +165,6 @@
         circle.setAttribute("cy", y);
         circle.setAttribute("r", 20);
         circle.classList.add("note");
-        if (note === chromatic[rootIndex]) circle.classList.add("fundamental");
         circle.style.fill = selectedNotes.has(note) ? "lightblue" : "white";
         circle.addEventListener("click", () => {
           if (selectedNotes.has(note)) selectedNotes.delete(note);
@@ -305,9 +181,52 @@
       });
     }
 
-    document.getElementById("save-shape").addEventListener("click", () => {
+    function updateShapeList() {
+      shapeList.innerHTML = "";
+      savedShapes.forEach(({ notes }, index) => {
+        const div = document.createElement("div");
+        div.className = "shape-item";
+
+        const label = document.createElement("span");
+        label.textContent = `Shape ${index + 1}`;
+        label.style.cursor = "pointer";
+        label.onclick = () => {
+          selectedNotes.clear();
+          notes.forEach(n => selectedNotes.add(n));
+          displaySelectionInfo();
+          draw();
+        };
+
+        const mergeBtn = document.createElement("button");
+        mergeBtn.textContent = "+";
+        mergeBtn.title = "Merge into current";
+        mergeBtn.style.background = "green";
+        mergeBtn.style.marginRight = "5px";
+        mergeBtn.onclick = () => {
+          notes.forEach(n => selectedNotes.add(n));
+          displaySelectionInfo();
+          draw();
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "✖";
+        deleteBtn.onclick = () => {
+          savedShapes.splice(index, 1);
+          updateShapeList();
+          draw();
+        };
+
+        div.appendChild(label);
+        div.appendChild(mergeBtn);
+        div.appendChild(deleteBtn);
+        shapeList.appendChild(div);
+      });
+    }
+
+    saveShapeButton.addEventListener("click", () => {
       if (selectedNotes.size > 1) {
-        savedShapes.push(new Set(selectedNotes));
+        const color = shapeColors[savedShapes.length % shapeColors.length];
+        savedShapes.push({ notes: new Set(selectedNotes), color });
         updateShapeList();
         selectedNotes.clear();
         displaySelectionInfo();
@@ -315,57 +234,19 @@
       }
     });
 
-    document.getElementById("clear-button").addEventListener("click", () => {
+    clearButton.addEventListener("click", () => {
       selectedNotes.clear();
       displaySelectionInfo();
       draw();
     });
 
-    document.getElementById("clear-all").addEventListener("click", () => {
+    clearAllButton.addEventListener("click", () => {
       savedShapes.length = 0;
       updateShapeList();
       draw();
     });
 
-    function updateShapeList() {
-      shapeList.innerHTML = "";
-      savedShapes.forEach((shape, index) => {
-        const div = document.createElement("div");
-        div.className = "shape-item";
-        div.textContent = `Shape ${index + 1}`;
-        const btn = document.createElement("button");
-        btn.textContent = "✖";
-        btn.onclick = () => {
-          savedShapes.splice(index, 1);
-          updateShapeList();
-          draw();
-        };
-        div.appendChild(btn);
-        shapeList.appendChild(div);
-      });
-    }
-
-    modeToggle.addEventListener("change", () => {
-      if (modeToggle.value === "chord") {
-        chordControls.classList.remove("hidden");
-        scaleControls.classList.add("hidden");
-        updateSelection();
-      } else {
-        scaleControls.classList.remove("hidden");
-        chordControls.classList.add("hidden");
-        updateScaleSelection();
-      }
-    });
-
-    rootSelect.addEventListener("change", changeFundamentalOnly);
-    thirdSelect.addEventListener("change", updateSelection);
-    fifthSelect.addEventListener("change", updateSelection);
-    seventhSelect.addEventListener("change", updateSelection);
-    scaleSelect.addEventListener("change", updateScaleSelection);
-
-    rootSelect.value = "C";
-    modeToggle.value = "chord";
-    updateSelection();
+    draw();
   </script>
 </body>
 </html>
