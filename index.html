@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.2.3.1) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.3.0.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +14,7 @@
     polygon { stroke-width: 2; }
     .controls { margin-top: 20px; max-width: 500px; width: 100%; display: flex; flex-direction: column; gap: 0.5em; }
     .shape-list { display: flex; flex-direction: column; gap: 0.5em; }
-    .shape-item { display: flex; justify-content: space-between; align-items: center; background: #eee; padding: 0.5em; border-radius: 5px; }
+    .shape-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #eee; padding: 0.5em; border-radius: 5px; }
     #app-version { font-size: 0.9em; color: gray; margin-top: 1em; }
   </style>
 </head>
@@ -28,7 +28,7 @@
     <button id="add-shape-by-id">Add Shape by ID</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.2.3.1</div>
+    <div id="app-version">Version: 0.3.0.0</div>
   </div>
   <script>
     const svg = document.getElementById("circle");
@@ -56,7 +56,7 @@
 
     function drawShapes() {
       savedShapes.forEach(({ notes, color }) => {
-        const coords = circleFifths.filter(n => notes.has(n)).map(n => getCoords(n));
+        const coords = circleFifths.filter(n => notes.has(n)).map(getCoords);
         if (coords.length >= 2) {
           const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
           polygon.setAttribute("points", coords.map(([x, y]) => `${x},${y}`).join(" "));
@@ -68,7 +68,7 @@
     }
 
     function drawCurrentShape() {
-      const coords = circleFifths.filter(n => selectedNotes.has(n)).map(n => getCoords(n));
+      const coords = circleFifths.filter(n => selectedNotes.has(n)).map(getCoords);
       if (coords.length >= 2) {
         const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         polygon.setAttribute("points", coords.map(([x, y]) => `${x},${y}`).join(" "));
@@ -115,74 +115,70 @@
     }
 
     function updateShapeList() {
-  shapeList.innerHTML = "";
-  savedShapes.forEach(({ notes }, index) => {
-    const shapeID = getShapeBinaryDecimal(notes);
-    const div = document.createElement("div");
-    div.className = "shape-item";
+      shapeList.innerHTML = "";
+      savedShapes.forEach(({ notes }, index) => {
+        const shapeID = getShapeBinaryDecimal(notes);
+        const div = document.createElement("div");
+        div.className = "shape-item";
 
-    const span = document.createElement("span");
-    span.textContent = `Shape ${shapeID}`;
-    span.style.cursor = "pointer";
-    span.onclick = () => {
-      selectedNotes.clear();
-      notes.forEach(n => selectedNotes.add(n));
-      update();
-    };
+        const span = document.createElement("span");
+        span.textContent = `Shape ${shapeID}`;
+        span.style.cursor = "pointer";
+        span.onclick = () => {
+          selectedNotes.clear();
+          notes.forEach(n => selectedNotes.add(n));
+          update();
+        };
 
-    const rotateLeftBtn = document.createElement("button");
-    rotateLeftBtn.textContent = "⟲";
-    rotateLeftBtn.title = "Rotate Left";
-    rotateLeftBtn.onclick = () => {
-      const rotated = new Set();
-      circleFifths.forEach((note, i) => {
-        const prev = circleFifths[(i + 1) % 12];
-        if (notes.has(prev)) rotated.add(note);
-      });
-      savedShapes[index].notes = rotated;
-      updateShapeList();
-      update();
-    };
+        const rotateLeftBtn = document.createElement("button");
+        rotateLeftBtn.textContent = "⟲";
+        rotateLeftBtn.title = "Rotate Left";
+        rotateLeftBtn.onclick = () => {
+          const rotated = new Set();
+          circleFifths.forEach((note, i) => {
+            const prev = circleFifths[(i + 1) % 12];
+            if (notes.has(prev)) rotated.add(note);
+          });
+          savedShapes[index].notes = rotated;
+          updateShapeList();
+          update();
+        };
 
-    const mergeBtn = document.createElement("button");
-    mergeBtn.textContent = "+";
-    mergeBtn.title = "Merge with Current";
-    mergeBtn.onclick = () => {
-      notes.forEach(n => selectedNotes.add(n));
-      update();
-    };
+        const rotateRightBtn = document.createElement("button");
+        rotateRightBtn.textContent = "⟳";
+        rotateRightBtn.title = "Rotate Right";
+        rotateRightBtn.onclick = () => {
+          const rotated = new Set();
+          circleFifths.forEach((note, i) => {
+            const next = circleFifths[(i + 11) % 12];
+            if (notes.has(next)) rotated.add(note);
+          });
+          savedShapes[index].notes = rotated;
+          updateShapeList();
+          update();
+        };
 
-    const rotateRightBtn = document.createElement("button");
-    rotateRightBtn.textContent = "⟳";
-    rotateRightBtn.title = "Rotate Right";
-    rotateRightBtn.onclick = () => {
-      const rotated = new Set();
-      circleFifths.forEach((note, i) => {
-        const next = circleFifths[(i + 11) % 12];
-        if (notes.has(next)) rotated.add(note);
-      });
-      savedShapes[index].notes = rotated;
-      updateShapeList();
-      update();
-    };
+        const mergeBtn = document.createElement("button");
+        mergeBtn.textContent = "+";
+        mergeBtn.onclick = () => {
+          notes.forEach(n => selectedNotes.add(n));
+          update();
+        };
 
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "✖";
-    delBtn.title = "Delete Shape";
-    delBtn.onclick = () => {
-      savedShapes.splice(index, 1);
-      updateShapeList();
-      update();
-    };
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "✖";
+        delBtn.onclick = () => {
+          savedShapes.splice(index, 1);
+          updateShapeList();
+          update();
+        };
 
-    div.appendChild(span);
-    div.appendChild(rotateLeftBtn);
-    div.appendChild(mergeBtn);
-    div.appendChild(rotateRightBtn);
-    div.appendChild(delBtn);
-    shapeList.appendChild(div);
-  });
-}
+        div.appendChild(span);
+        div.appendChild(rotateLeftBtn);
+        div.appendChild(mergeBtn);
+        div.appendChild(rotateRightBtn);
+        div.appendChild(delBtn);
+        shapeList.appendChild(div);
       });
     }
 
