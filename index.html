@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.2.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.3.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +24,7 @@
 </head>
 <body>
   <!-- The SVG element is now empty and will be populated dynamically by the script -->
-<div id="svg-container" style="width: 90vw; height: 90vw; max-width: 500px; max-height: 500px;"></div>
+<svg id="circle" viewBox="0 0 400 400" width="90%" height="90%" style="max-width: 500px; max-height: 500px; border: 1px solid #eee;"></svg>
   <div id="overall-shape-panel">
     <div id="overall-shape">Overall Shape: —</div>
     <input type="number" id="overall-id-input" placeholder="Set overall shape ID" />
@@ -37,16 +37,11 @@
     <input type="number" id="shape-id-input" placeholder="Enter shape decimal ID">
     <button id="add-shape-by-id">Add Shape by ID</button>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.4.2.0</div>
+    <div id="app-version">Version: 0.4.3.0</div>
   </div>
   <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("viewBox", "0 0 400 400");
-  svg.setAttribute("width", "100%");
-  svg.setAttribute("height", "100%");
-  document.getElementById("svg-container").appendChild(svg);
+  const svg = document.getElementById("circle");
 
   const shapeList = document.getElementById("shape-list");
   const chromatic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
