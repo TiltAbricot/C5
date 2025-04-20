@@ -94,7 +94,7 @@
     <button id="clear-all">Clear All Shapes</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.1.6</div>
+    <div id="app-version">Version: 0.1.7</div>
   </div>
 
   <script>
@@ -133,9 +133,15 @@
     }
 
     function getShapeBinaryDecimal(notes) {
-      const binary = circleFifths.map(n => notes.has(n) ? "1" : "0").join("");
-      return parseInt(binary, 2);
-    }
+  const binary = circleFifths.map(n => notes.has(n) ? "1" : "0");
+  let min = parseInt(binary.join(""), 2);
+  for (let i = 1; i < binary.length; i++) {
+    const rotated = binary.slice(i).concat(binary.slice(0, i));
+    const value = parseInt(rotated.join(""), 2);
+    if (value < min) min = value;
+  }
+  return min;
+}
 
     function displaySelectionInfo() {
       const intervals = Array.from(selectedNotes).map(n => (chromatic.indexOf(n) - rootIndex + 12) % 12).sort((a, b) => a - b);
