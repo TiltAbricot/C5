@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.9) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.9.1) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -182,11 +182,10 @@
         circle.classList.add("note");
         circle.style.fill = selectedNotes.has(note) ? "lightblue" : "white";
         circle.addEventListener("click", () => {
-          if (selectedNotes.has(note)) selectedNotes.delete(note);
-          else selectedNotes.add(note);
-          displaySelectionInfo();
-          
-});
+  if (selectedNotes.has(note)) selectedNotes.delete(note);
+  else selectedNotes.add(note);
+  displaySelectionInfo();
+  draw();
 
 document.getElementById("add-shape-by-id").addEventListener("click", () => {
   const input = document.getElementById("shape-id-input");
@@ -201,6 +200,14 @@ document.getElementById("add-shape-by-id").addEventListener("click", () => {
   savedShapes.push({ notes, color });
   updateShapeList();
   draw();
+});
+});
+          else selectedNotes.add(note);
+          displaySelectionInfo();
+          
+});
+
+
 });
 
 draw();
