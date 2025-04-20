@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.3.6.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.3.6.1) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,7 +37,7 @@
     <button id="add-shape-by-id">Add Shape by ID</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.3.6.0</div>
+    <div id="app-version">Version: 0.3.6.1</div>
   </div>
   <script>
     const svg = document.getElementById("circle");
@@ -212,8 +212,20 @@
       document.getElementById("overall-shape").textContent = `Overall Shape: ${min}`;
     }
 
-    function update() {
+    function drawBackgroundRing() {
+  const bgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  bgCircle.setAttribute("cx", center);
+  bgCircle.setAttribute("cy", center);
+  bgCircle.setAttribute("r", radius);
+  bgCircle.setAttribute("fill", "none");
+  bgCircle.setAttribute("stroke", "#ccc");
+  bgCircle.setAttribute("stroke-width", "2");
+  svg.appendChild(bgCircle);
+}
+
+function update() {
       svg.innerHTML = "";
+      drawBackgroundRing();
       drawShapes();
       drawCurrentShape();
       drawOverallShape();
