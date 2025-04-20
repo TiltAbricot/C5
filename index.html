@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.3.0.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.3.2.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,6 +20,7 @@
 </head>
 <body>
   <svg id="circle"></svg>
+  <div id="overall-shape" style="position: absolute; left: 10px; top: 10px; font-weight: bold;"></div>
   <div class="controls">
     <button id="save-shape">Save Shape</button>
     <button id="clear-button">Clear Selection</button>
@@ -28,7 +29,7 @@
     <button id="add-shape-by-id">Add Shape by ID</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.3.0.0</div>
+    <div id="app-version">Version: 0.3.2.0</div>
   </div>
   <script>
     const svg = document.getElementById("circle");
@@ -92,6 +93,7 @@
           if (selectedNotes.has(note)) selectedNotes.delete(note);
           else selectedNotes.add(note);
           update();
+updateOverallShapeLabel();
         });
         svg.appendChild(circle);
 
@@ -182,10 +184,31 @@
       });
     }
 
-    function update() {
+    function updateOverallShapeLabel() {
+  const combined = new Set();
+  savedShapes.forEach(({ notes }) => notes.forEach(n => combined.add(n)));
+  const id = getShapeBinaryDecimal(combined);
+  document.getElementById("overall-shape").textContent = `Overall Shape: ${id}`;
+}
+
+function drawOverallShape() {
+  const combined = new Set();
+  savedShapes.forEach(({ notes }) => notes.forEach(n => combined.add(n)));
+  const coords = circleFifths.filter(n => combined.has(n)).map(getCoords);
+  if (coords.length >= 2) {
+    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    polygon.setAttribute("points", coords.map(([x, y]) => `${x},${y}`).join(" "));
+    polygon.setAttribute("fill", "rgba(255,0,200,0.2)");
+    polygon.setAttribute("stroke", "rgba(255,0,200,0.5)");
+    svg.appendChild(polygon);
+  }
+}
+
+function update() {
       svg.innerHTML = "";
       drawShapes();
       drawCurrentShape();
+      drawOverallShape();
       drawNotes();
     }
 
