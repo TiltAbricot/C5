@@ -1,3 +1,4 @@
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.6) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,7 +94,7 @@
     <button id="clear-all">Clear All Shapes</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.1.5</div>
+    <div id="app-version">Version: 0.1.6</div>
   </div>
 
   <script>
@@ -129,6 +130,11 @@
         center + radius * Math.cos(angle),
         center + radius * Math.sin(angle)
       ];
+    }
+
+    function getShapeBinaryDecimal(notes) {
+      const binary = circleFifths.map(n => notes.has(n) ? "1" : "0").join("");
+      return parseInt(binary, 2);
     }
 
     function displaySelectionInfo() {
@@ -187,8 +193,9 @@
         const div = document.createElement("div");
         div.className = "shape-item";
 
+        const shapeID = getShapeBinaryDecimal(notes);
         const label = document.createElement("span");
-        label.textContent = `Shape ${index + 1}`;
+        label.textContent = `Shape ${shapeID}`;
         label.style.cursor = "pointer";
         label.onclick = () => {
           selectedNotes.clear();
