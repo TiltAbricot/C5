@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.8) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.1.9) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,10 +93,11 @@
     <button id="clear-button">Clear Selection</button>
     <button id="clear-all">Clear All Shapes</button>
     <div id="chord-name"></div>
-    <div class="shape-list" id="shape-list"><input type="number" id="shape-id-input" placeholder="Enter shape decimal ID" />
+    <div class="shape-list" id="shape-list"></div>
+    <input type="number" id="shape-id-input" placeholder="Enter shape decimal ID" />
     <button id="add-shape-by-id">Add Shape by ID</button>
     </div>
-    <div id="app-version">Version: 0.1.8</div>
+    <div id="app-version">Version: 0.1.9</div>
   </div>
 
   <script>
@@ -184,7 +185,10 @@
           if (selectedNotes.has(note)) selectedNotes.delete(note);
           else selectedNotes.add(note);
           displaySelectionInfo();
-          document.getElementById("add-shape-by-id").addEventListener("click", () => {
+          
+});
+
+document.getElementById("add-shape-by-id").addEventListener("click", () => {
   const input = document.getElementById("shape-id-input");
   const decimal = parseInt(input.value);
   if (isNaN(decimal)) return;
