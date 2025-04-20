@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.3.4.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.3.5.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,16 +16,16 @@
     .shape-list { display: flex; flex-direction: column; gap: 0.5em; }
     .shape-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #eee; padding: 0.5em; border-radius: 5px; }
     #app-version { font-size: 0.9em; color: gray; margin-top: 1em; }
+    #overall-shape-panel { position: absolute; left: 10px; top: 10px; font-weight: bold; display: flex; flex-direction: column; gap: 0.5em; }
   </style>
 </head>
 <body>
   <svg id="circle"></svg>
-  <div id="overall-shape-panel" style="position: absolute; left: 10px; top: 10px; font-weight: bold; display: flex; flex-direction: column; gap: 0.5em;">
-  <div id="overall-shape">Overall Shape: —</div>
-  <input type="number" id="overall-id-input" placeholder="Set overall shape ID" />
-  <label><input type="checkbox" id="toggle-overall-mode"> Manual Overall</label>
-  $1
-</div>
+  <div id="overall-shape-panel">
+    <div id="overall-shape">Overall Shape: —</div>
+    <input type="number" id="overall-id-input" placeholder="Set overall shape ID" />
+    <label><input type="checkbox" id="toggle-overall-mode"> Manual Overall</label>
+  </div>
   <div class="controls">
     <button id="save-shape">Save Shape</button>
     <button id="clear-button">Clear Selection</button>
@@ -34,24 +34,20 @@
     <button id="add-shape-by-id">Add Shape by ID</button>
     <div id="chord-name"></div>
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.3.4.0</div>
+    <div id="app-version">Version: 0.3.5.0</div>
   </div>
   <script>
     const svg = document.getElementById("circle");
     const shapeList = document.getElementById("shape-list");
-    const chordNameDisplay = document.getElementById("chord-name");
-
     const chromatic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
     const circleFifths = Array.from({ length: 12 }, (_, i) => chromatic[(0 + i * 7) % 12]);
 
     const selectedNotes = new Set();
     const savedShapes = [];
-let overallShape = new Set();
-let useManualOverallShape = false;
-    const shapeColors = [
-      "rgba(100,150,255,0.4)", "rgba(255,100,100,0.4)", "rgba(100,255,150,0.4)",
-      "rgba(255,255,100,0.4)", "rgba(200,100,255,0.4)", "rgba(255,150,150,0.4)", "rgba(150,255,255,0.4)"
-    ];
+    const shapeColors = ["rgba(100,150,255,0.4)", "rgba(255,100,100,0.4)", "rgba(100,255,150,0.4)", "rgba(255,255,100,0.4)", "rgba(200,100,255,0.4)", "rgba(255,150,150,0.4)", "rgba(150,255,255,0.4)"];
+
+    let overallShape = new Set();
+    let useManualOverallShape = false;
 
     const center = 200;
     const radius = 170;
@@ -60,6 +56,17 @@ let useManualOverallShape = false;
       const i = circleFifths.indexOf(note);
       const angle = (Math.PI * 2 * i / 12) - Math.PI / 2;
       return [center + radius * Math.cos(angle), center + radius * Math.sin(angle)];
+    }
+
+    function getShapeBinaryDecimal(notes) {
+      const binary = circleFifths.map(n => notes.has(n) ? "1" : "0");
+      let min = parseInt(binary.join(""), 2);
+      for (let i = 1; i < binary.length; i++) {
+        const rotated = binary.slice(i).concat(binary.slice(0, i));
+        const val = parseInt(rotated.join(""), 2);
+        if (val < min) min = val;
+      }
+      return min;
     }
 
     function drawShapes() {
@@ -86,10 +93,22 @@ let useManualOverallShape = false;
       }
     }
 
+    function drawOverallShape() {
+      const shape = useManualOverallShape ? overallShape : new Set();
+      if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
+      const coords = circleFifths.filter(n => shape.has(n)).map(getCoords);
+      if (coords.length >= 2) {
+        const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        polygon.setAttribute("points", coords.map(([x, y]) => `${x},${y}`).join(" "));
+        polygon.setAttribute("fill", "rgba(255,0,200,0.2)");
+        polygon.setAttribute("stroke", "rgba(255,0,200,0.5)");
+        svg.appendChild(polygon);
+      }
+    }
+
     function drawNotes() {
       circleFifths.forEach(note => {
         const [x, y] = getCoords(note);
-
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute("cx", x);
         circle.setAttribute("cy", y);
@@ -99,12 +118,7 @@ let useManualOverallShape = false;
         circle.addEventListener("click", () => {
           if (selectedNotes.has(note)) selectedNotes.delete(note);
           else selectedNotes.add(note);
-          $1
-  document.getElementById("toggle-overall-mode").addEventListener("change", (e) => {
-    useManualOverallShape = e.target.checked;
-    update();
-    updateOverallShapeLabel();
-  });
+          update();
         });
         svg.appendChild(circle);
 
@@ -114,17 +128,6 @@ let useManualOverallShape = false;
         label.textContent = note;
         svg.appendChild(label);
       });
-    }
-
-    function getShapeBinaryDecimal(notes) {
-      const binary = circleFifths.map(n => notes.has(n) ? "1" : "0");
-      let min = parseInt(binary.join(""), 2);
-      for (let i = 1; i < binary.length; i++) {
-        const rotated = binary.slice(i).concat(binary.slice(0, i));
-        const val = parseInt(rotated.join(""), 2);
-        if (val < min) min = val;
-      }
-      return min;
     }
 
     function updateShapeList() {
@@ -145,7 +148,6 @@ let useManualOverallShape = false;
 
         const rotateLeftBtn = document.createElement("button");
         rotateLeftBtn.textContent = "⟲";
-        rotateLeftBtn.title = "Rotate Left";
         rotateLeftBtn.onclick = () => {
           const rotated = new Set();
           circleFifths.forEach((note, i) => {
@@ -159,7 +161,6 @@ let useManualOverallShape = false;
 
         const rotateRightBtn = document.createElement("button");
         rotateRightBtn.textContent = "⟳";
-        rotateRightBtn.title = "Rotate Right";
         rotateRightBtn.onclick = () => {
           const rotated = new Set();
           circleFifths.forEach((note, i) => {
@@ -195,42 +196,26 @@ let useManualOverallShape = false;
       });
     }
 
-    $1
-  const shape = useManualOverallShape ? overallShape : new Set();
-  if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
-  const binary = circleFifths.map(n => shape.has(n) ? "1" : "0");
-  let min = parseInt(binary.join(""), 2);
-  for (let i = 1; i < binary.length; i++) {
-    const rotated = binary.slice(i).concat(binary.slice(0, i));
-    const val = parseInt(rotated.join(""), 2);
-    if (val < min) min = val;
-  }
-  document.getElementById("overall-shape").textContent = `Overall Shape: ${min}`;
-}
-}
+    function updateOverallShapeLabel() {
+      const shape = useManualOverallShape ? overallShape : new Set();
+      if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
+      const binary = circleFifths.map(n => shape.has(n) ? "1" : "0");
+      let min = parseInt(binary.join(""), 2);
+      for (let i = 1; i < binary.length; i++) {
+        const rotated = binary.slice(i).concat(binary.slice(0, i));
+        const val = parseInt(rotated.join(""), 2);
+        if (val < min) min = val;
+      }
+      document.getElementById("overall-shape").textContent = `Overall Shape: ${min}`;
+    }
 
-$1
-  const shape = useManualOverallShape ? overallShape : new Set();
-  if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
-  const coords = circleFifths.filter(n => shape.has(n)).map(getCoords);
-  if (coords.length >= 2) {
-    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygon.setAttribute("points", coords.map(([x, y]) => `${x},${y}`).join(" "));
-    polygon.setAttribute("fill", "rgba(255,0,200,0.2)");
-    polygon.setAttribute("stroke", "rgba(255,0,200,0.5)");
-    svg.appendChild(polygon);
-  }
-  }
-}
-  }
-}
-
-function update() {
+    function update() {
       svg.innerHTML = "";
       drawShapes();
       drawCurrentShape();
       drawOverallShape();
       drawNotes();
+      updateOverallShapeLabel();
     }
 
     document.getElementById("save-shape").addEventListener("click", () => {
@@ -254,22 +239,39 @@ function update() {
       update();
     });
 
-    
-
-    update();
-
-  document.getElementById("set-overall-by-id").addEventListener("click", () => {
-    const input = document.getElementById("overall-id-input");
-    const decimal = parseInt(input.value);
-    if (isNaN(decimal)) return;
-    const binary = decimal.toString(2).padStart(12, "0");
-    overallShape.clear();
-    [...binary].forEach((bit, i) => {
-      if (bit === "1") overallShape.add(circleFifths[i]);
+    document.getElementById("add-shape-by-id").addEventListener("click", () => {
+      const input = document.getElementById("shape-id-input");
+      const decimal = parseInt(input.value);
+      if (isNaN(decimal)) return;
+      const binary = decimal.toString(2).padStart(12, "0");
+      const notes = new Set();
+      [...binary].forEach((bit, i) => {
+        if (bit === "1") notes.add(circleFifths[i]);
+      });
+      const color = shapeColors[savedShapes.length % shapeColors.length];
+      savedShapes.push({ notes, color });
+      updateShapeList();
+      update();
     });
+
+    document.getElementById("set-overall-by-id").addEventListener("click", () => {
+      const input = document.getElementById("overall-id-input");
+      const decimal = parseInt(input.value);
+      if (isNaN(decimal)) return;
+      const binary = decimal.toString(2).padStart(12, "0");
+      overallShape.clear();
+      [...binary].forEach((bit, i) => {
+        if (bit === "1") overallShape.add(circleFifths[i]);
+      });
+      update();
+    });
+
+    document.getElementById("toggle-overall-mode").addEventListener("change", (e) => {
+      useManualOverallShape = e.target.checked;
+      update();
+    });
+
     update();
-    updateOverallShapeLabel();
-  });
-</script>
+  </script>
 </body>
 </html>
