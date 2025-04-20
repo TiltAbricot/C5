@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.4.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.5.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +28,7 @@
   <div id="overall-shape-panel">
     <div id="overall-shape">Overall Shape: —</div>
     <button id="set-overall-by-id" style="display: none;">Apply Overall Shape</button>
-    <input type="number" id="overall-id-input" placeholder="Set overall shape ID" />
+    <input type="number" id="overall-id-input" placeholder="Set overall shape ID" style="display: none;" />
     <label><input type="checkbox" id="toggle-overall-mode"> Manual Overall</label>
   </div>
   <div class="controls">
@@ -37,7 +37,7 @@
     <button id="clear-all">Clear All Shapes</button>
     
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.4.4.0</div>
+    <div id="app-version">Version: 0.4.5.0</div>
   </div>
   <script>
 const svg = document.getElementById("circle");
@@ -227,6 +227,7 @@ document.getElementById("set-overall-by-id").onclick = () => {
 document.getElementById("toggle-overall-mode").onchange = (e) => {
   useManualOverallShape = e.target.checked;
   document.getElementById("set-overall-by-id").style.display = useManualOverallShape ? "inline-block" : "none";
+  document.getElementById("overall-id-input").style.display = useManualOverallShape ? "inline-block" : "none";
   update();
 };
 </script>
