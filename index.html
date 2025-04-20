@@ -97,7 +97,7 @@
     <input type="number" id="shape-id-input" placeholder="Enter shape decimal ID" />
     <button id="add-shape-by-id">Add Shape by ID</button>
     </div>
-    <div id="app-version">Version: 0.1.9</div>
+    <div id="app-version">Version: 0.1.9.1</div>
   </div>
 
   <script>
@@ -186,16 +186,7 @@
   else selectedNotes.add(note);
   displaySelectionInfo();
   draw();
-
-document.getElementById("add-shape-by-id").addEventListener("click", () => {
-  const input = document.getElementById("shape-id-input");
-  const decimal = parseInt(input.value);
-  if (isNaN(decimal)) return;
-  const binary = decimal.toString(2).padStart(12, "0");
-  const notes = new Set();
-  [...binary].forEach((bit, i) => {
-    if (bit === "1") notes.add(circleFifths[i]);
-  });
+});
   const color = shapeColors[savedShapes.length % shapeColors.length];
   savedShapes.push({ notes, color });
   updateShapeList();
@@ -211,8 +202,7 @@ document.getElementById("add-shape-by-id").addEventListener("click", () => {
 });
 
 draw();
-        });
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
         label.setAttribute("x", x);
         label.setAttribute("y", y);
         label.textContent = note;
@@ -288,6 +278,21 @@ draw();
     });
 
     draw();
-  </script>
+
+document.getElementById("add-shape-by-id").addEventListener("click", () => {
+  const input = document.getElementById("shape-id-input");
+  const decimal = parseInt(input.value);
+  if (isNaN(decimal)) return;
+  const binary = decimal.toString(2).padStart(12, "0");
+  const notes = new Set();
+  [...binary].forEach((bit, i) => {
+    if (bit === "1") notes.add(circleFifths[i]);
+  });
+  const color = shapeColors[savedShapes.length % shapeColors.length];
+  savedShapes.push({ notes, color });
+  updateShapeList();
+  draw();
+});
+</script>
 </body>
 </html>
