@@ -40,158 +40,194 @@
     <div id="app-version">Version: 0.4.3.0</div>
   </div>
   <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const svg = document.getElementById("circle");
+const svg = document.getElementById("circle");
+const shapeList = document.getElementById("shape-list");
+const chromatic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const circleFifths = Array.from({ length: 12 }, (_, i) => chromatic[(i * 7) % 12]);
+const center = 200;
+const radius = 150;
+const selectedNotes = new Set();
+const savedShapes = [];
+const shapeColors = ["rgba(100,150,255,0.4)", "rgba(255,100,100,0.4)", "rgba(100,255,150,0.4)", "rgba(255,255,100,0.4)", "rgba(200,100,255,0.4)", "rgba(255,150,150,0.4)", "rgba(150,255,255,0.4)"];
+let overallShape = new Set();
+let useManualOverallShape = false;
 
-  const shapeList = document.getElementById("shape-list");
-  const chromatic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const circleFifths = Array.from({ length: 12 }, (_, i) => chromatic[(i * 7) % 12]);
-  const center = 200;
-  const radius = 150;
-  const selectedNotes = new Set();
-  const savedShapes = [];
-  const shapeColors = ["rgba(100,150,255,0.4)", "rgba(255,100,100,0.4)", "rgba(100,255,150,0.4)", "rgba(255,255,100,0.4)", "rgba(200,100,255,0.4)", "rgba(255,150,150,0.4)", "rgba(150,255,255,0.4)"];
-  let overallShape = new Set();
-  let useManualOverallShape = false;
+function getCoords(note) {
+  const index = circleFifths.indexOf(note);
+  const angle = (Math.PI * 2 * index / 12) - Math.PI / 2;
+  return [center + radius * Math.cos(angle), center + radius * Math.sin(angle)];
+}
 
-  // ... all the rest of your code logic remains here unchanged, adjusted to work inside this scope
+function getShapeBinaryDecimal(notes) {
+  const binary = circleFifths.map(n => notes.has(n) ? "1" : "0");
+  let min = parseInt(binary.join(""), 2);
+  for (let i = 1; i < binary.length; i++) {
+    const rotated = binary.slice(i).concat(binary.slice(0, i));
+    const val = parseInt(rotated.join(""), 2);
+    if (val < min) min = val;
+  }
+  return min;
+}
 
-  update();
-});
-        });
-        svg.appendChild(circle);
+function drawPolygon(notes, fill, stroke) {
+  const coords = circleFifths.filter(n => notes.has(n)).map(getCoords);
+  if (coords.length < 2) return;
+  const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  polygon.setAttribute("points", coords.map(([x, y]) => `${x},${y}`).join(" "));
+  polygon.setAttribute("fill", fill);
+  polygon.setAttribute("stroke", stroke);
+  svg.appendChild(polygon);
+}
 
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", x);
-        label.setAttribute("y", y);
-        label.textContent = note;
-        svg.appendChild(label);
-      });
-    }
+function drawNotes() {
+  circleFifths.forEach(note => {
+    const [x, y] = getCoords(note);
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.setAttribute("r", 20);
+    circle.classList.add("note");
+    if (selectedNotes.has(note)) circle.classList.add("selected");
+    circle.addEventListener("click", () => {
+      selectedNotes.has(note) ? selectedNotes.delete(note) : selectedNotes.add(note);
+      update();
+    });
+    svg.appendChild(circle);
 
-    function updateShapeList() {
-      shapeList.innerHTML = "";
-      savedShapes.forEach(({ notes }, index) => {
-        const shapeID = getShapeBinaryDecimal(notes);
-        const div = document.createElement("div");
-        div.className = "shape-item";
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", x);
+    label.setAttribute("y", y);
+    label.textContent = note;
+    svg.appendChild(label);
+  });
+}
 
-        const span = document.createElement("span");
-        span.textContent = `Shape ${shapeID}`;
-        span.style.cursor = "pointer";
-        span.onclick = () => {
-          selectedNotes.clear();
-          notes.forEach(n => selectedNotes.add(n));
-          update();
-        };
+function updateShapeList() {
+  shapeList.innerHTML = "";
+  savedShapes.forEach(({ notes }, index) => {
+    const shapeID = getShapeBinaryDecimal(notes);
+    const div = document.createElement("div");
+    div.className = "shape-item";
 
-        const rotateLeft = document.createElement("button");
-        rotateLeft.textContent = "⟲";
-        rotateLeft.onclick = () => rotateShape(index, true);
+    const span = document.createElement("span");
+    span.textContent = `Shape ${shapeID}`;
+    span.style.cursor = "pointer";
+    span.onclick = () => {
+      selectedNotes.clear();
+      notes.forEach(n => selectedNotes.add(n));
+      update();
+    };
 
-        const rotateRight = document.createElement("button");
-        rotateRight.textContent = "⟳";
-        rotateRight.onclick = () => rotateShape(index, false);
+    const rotateLeft = document.createElement("button");
+    rotateLeft.textContent = "⟲";
+    rotateLeft.onclick = () => rotateShape(index, true);
 
-        const merge = document.createElement("button");
-        merge.textContent = "+";
-        merge.onclick = () => {
-          notes.forEach(n => selectedNotes.add(n));
-          update();
-        };
+    const rotateRight = document.createElement("button");
+    rotateRight.textContent = "⟳";
+    rotateRight.onclick = () => rotateShape(index, false);
 
-        const remove = document.createElement("button");
-        remove.textContent = "✖";
-        remove.onclick = () => {
-          savedShapes.splice(index, 1);
-          updateShapeList();
-          update();
-        };
+    const merge = document.createElement("button");
+    merge.textContent = "+";
+    merge.onclick = () => {
+      notes.forEach(n => selectedNotes.add(n));
+      update();
+    };
 
-        div.append(span, rotateLeft, merge, rotateRight, remove);
-        shapeList.appendChild(div);
-      });
-    }
-
-    function rotateShape(index, left) {
-      const shape = savedShapes[index].notes;
-      const rotated = new Set();
-      circleFifths.forEach((note, i) => {
-        const target = circleFifths[(i + (left ? 1 : 11)) % 12];
-        if (shape.has(target)) rotated.add(note);
-      });
-      savedShapes[index].notes = rotated;
+    const remove = document.createElement("button");
+    remove.textContent = "✖";
+    remove.onclick = () => {
+      savedShapes.splice(index, 1);
       updateShapeList();
       update();
-    }
-
-    function updateOverallShapeLabel() {
-      const shape = useManualOverallShape ? overallShape : new Set();
-      if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
-      document.getElementById("overall-shape").textContent = `Overall Shape: ${getShapeBinaryDecimal(shape)}`;
-    }
-
-    function update() {
-      svg.innerHTML = "";
-      const bg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      bg.setAttribute("cx", center);
-      bg.setAttribute("cy", center);
-      bg.setAttribute("r", radius);
-      bg.setAttribute("fill", "none");
-      bg.setAttribute("stroke", "#ccc");
-      bg.setAttribute("stroke-width", "2");
-      svg.appendChild(bg);
-
-      savedShapes.forEach(({ notes, color }) => drawPolygon(notes, color, color.replace(/0\.4\)/, "1)")));
-      drawPolygon(selectedNotes, "rgba(150,150,150,0.4)", "gray");
-
-      const shape = useManualOverallShape ? overallShape : new Set();
-      if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
-      drawPolygon(shape, "rgba(255,0,200,0.2)", "rgba(255,0,200,0.5)");
-
-      drawNotes();
-      updateOverallShapeLabel();
-    }
-
-    document.getElementById("save-shape").onclick = () => {
-      if (selectedNotes.size > 1) {
-        savedShapes.push({ notes: new Set(selectedNotes), color: shapeColors[savedShapes.length % shapeColors.length] });
-        selectedNotes.clear();
-        updateShapeList();
-        update();
-      }
     };
 
-    document.getElementById("clear-button").onclick = () => { selectedNotes.clear(); update(); };
-    document.getElementById("clear-all").onclick = () => { savedShapes.length = 0; updateShapeList(); update(); };
+    div.append(span, rotateLeft, merge, rotateRight, remove);
+    shapeList.appendChild(div);
+  });
+}
 
-    document.getElementById("add-shape-by-id").onclick = () => {
-      const val = parseInt(document.getElementById("shape-id-input").value);
-      if (!isNaN(val)) {
-        const bin = val.toString(2).padStart(12, "0");
-        const notes = new Set();
-        bin.split("").forEach((b, i) => b === "1" && notes.add(circleFifths[i]));
-        savedShapes.push({ notes, color: shapeColors[savedShapes.length % shapeColors.length] });
-        updateShapeList(); update();
-      }
-    };
+function rotateShape(index, left) {
+  const shape = savedShapes[index].notes;
+  const rotated = new Set();
+  circleFifths.forEach((note, i) => {
+    const target = circleFifths[(i + (left ? 1 : 11)) % 12];
+    if (shape.has(target)) rotated.add(note);
+  });
+  savedShapes[index].notes = rotated;
+  updateShapeList();
+  update();
+}
 
-    document.getElementById("set-overall-by-id").onclick = () => {
-      const val = parseInt(document.getElementById("overall-id-input").value);
-      if (!isNaN(val)) {
-        const bin = val.toString(2).padStart(12, "0");
-        overallShape = new Set();
-        bin.split("").forEach((b, i) => b === "1" && overallShape.add(circleFifths[i]));
-        update();
-      }
-    };
+function updateOverallShapeLabel() {
+  const shape = useManualOverallShape ? overallShape : new Set();
+  if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
+  document.getElementById("overall-shape").textContent = `Overall Shape: ${getShapeBinaryDecimal(shape)}`;
+}
 
-    document.getElementById("toggle-overall-mode").onchange = (e) => {
-      useManualOverallShape = e.target.checked;
-      update();
-    };
+function update() {
+  svg.innerHTML = "";
+  const bg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  bg.setAttribute("cx", center);
+  bg.setAttribute("cy", center);
+  bg.setAttribute("r", radius);
+  bg.setAttribute("fill", "none");
+  bg.setAttribute("stroke", "#ccc");
+  bg.setAttribute("stroke-width", "2");
+  svg.appendChild(bg);
 
+  savedShapes.forEach(({ notes, color }) => drawPolygon(notes, color, color.replace(/0\.4\)/, "1)")));
+  drawPolygon(selectedNotes, "rgba(150,150,150,0.4)", "gray");
+
+  const shape = useManualOverallShape ? overallShape : new Set();
+  if (!useManualOverallShape) savedShapes.forEach(({ notes }) => notes.forEach(n => shape.add(n)));
+  drawPolygon(shape, "rgba(255,0,200,0.2)", "rgba(255,0,200,0.5)");
+
+  drawNotes();
+  updateOverallShapeLabel();
+}
+
+// Event listeners
+
+updateShapeList();
+update();
+
+document.getElementById("save-shape").onclick = () => {
+  if (selectedNotes.size > 1) {
+    savedShapes.push({ notes: new Set(selectedNotes), color: shapeColors[savedShapes.length % shapeColors.length] });
+    selectedNotes.clear();
+    updateShapeList();
     update();
-  </script>
+  }
+};
+
+document.getElementById("clear-button").onclick = () => { selectedNotes.clear(); update(); };
+document.getElementById("clear-all").onclick = () => { savedShapes.length = 0; updateShapeList(); update(); };
+
+document.getElementById("add-shape-by-id").onclick = () => {
+  const val = parseInt(document.getElementById("shape-id-input").value);
+  if (!isNaN(val)) {
+    const bin = val.toString(2).padStart(12, "0");
+    const notes = new Set();
+    bin.split("").forEach((b, i) => b === "1" && notes.add(circleFifths[i]));
+    savedShapes.push({ notes, color: shapeColors[savedShapes.length % shapeColors.length] });
+    updateShapeList(); update();
+  }
+};
+
+document.getElementById("set-overall-by-id").onclick = () => {
+  const val = parseInt(document.getElementById("overall-id-input").value);
+  if (!isNaN(val)) {
+    const bin = val.toString(2).padStart(12, "0");
+    overallShape = new Set();
+    bin.split("").forEach((b, i) => b === "1" && overallShape.add(circleFifths[i]));
+    update();
+  }
+};
+
+document.getElementById("toggle-overall-mode").onchange = (e) => {
+  useManualOverallShape = e.target.checked;
+  update();
+};
+</script>
 </body>
 </html>
