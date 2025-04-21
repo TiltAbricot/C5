@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.7.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.12.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,12 +26,14 @@
   <!-- The SVG element is now empty and will be populated dynamically by the script -->
 <svg id="circle" viewBox="0 0 400 400" width="90%" height="90%" style="max-width: 500px; max-height: 500px; border: 1px solid #eee;"></svg>
   <div id="overall-shape-panel">
-    <div id="overall-shape">Overall Shape: —</div>
-    <div id="overall-id-wrapper" style="display: none;">
-      <input type="number" id="overall-id-input" placeholder="Set overall shape ID" />
-      <button id="set-overall-by-id">Apply Overall Shape</button>
-    </div>
-    <label><input type="checkbox" id="toggle-overall-mode"> Manual Overall</label>
+  <label><input type="checkbox" id="toggle-overall-mode"> Manual Overall</label>
+  <div id="overall-shape">Overall Shape: —</div>
+  <div id="overall-id-wrapper" style="display: none;">
+    <input type="number" id="overall-id-input" placeholder="Set overall shape ID" />
+    <button id="set-overall-by-id">Apply Overall Shape</button>
+    <button id="find-major-minor">Find Major/Minor Triads</button>
+  </div>
+</div>
   </div>
   <div class="controls">
     <button id="save-shape">Save Shape</button>
@@ -39,7 +41,7 @@
     <button id="clear-all">Clear All Shapes</button>
     
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.4.7.0</div>
+    <div id="app-version">Version: 0.4.12.0</div>
   </div>
   <script>
 const svg = document.getElementById("circle");
@@ -190,6 +192,12 @@ function update() {
 
 // Event listeners
 
+document.getElementById("toggle-overall-mode").onchange = (e) => {
+  useManualOverallShape = e.target.checked;
+  document.getElementById("overall-id-wrapper").style.display = useManualOverallShape ? "block" : "none";
+  update();
+};
+
 updateShapeList();
 update();
 
@@ -217,9 +225,34 @@ document.getElementById("set-overall-by-id").onclick = () => {
   }
 };
 
-document.getElementById("toggle-overall-mode").onchange = (e) => {
-  useManualOverallShape = e.target.checked;
-  document.getElementById("overall-id-wrapper").style.display = useManualOverallShape ? "block" : "none";
+
+document.getElementById("find-major-minor").onclick = () => {
+  if (!useManualOverallShape) return;
+  const majorPattern = [0, 4, 7]; // root, major third, perfect fifth
+  const minorPattern = [0, 3, 7]; // root, minor third, perfect fifth
+
+  function getShapeSetFromRoot(rootIndex, intervals) {
+  return new Set(intervals.map(semi => chromatic[(chromatic.indexOf(circleFifths[rootIndex]) + semi) % 12]));
+}
+
+  const resultShapes = [];
+  for (let i = 0; i < 12; i++) {
+    const majorSet = getShapeSetFromRoot(i, majorPattern);
+    const minorSet = getShapeSetFromRoot(i, minorPattern);
+
+    const isMajorInside = [...majorSet].every(n => overallShape.has(n));
+    const isMinorInside = [...minorSet].every(n => overallShape.has(n));
+
+    if (isMajorInside) resultShapes.push({ notes: majorSet });
+    if (isMinorInside) resultShapes.push({ notes: minorSet });
+  }
+
+  savedShapes.length = 0;
+  resultShapes.forEach((shape, i) => {
+    shape.color = shapeColors[i % shapeColors.length];
+    savedShapes.push(shape);
+  });
+  updateShapeList();
   update();
 };
 </script>
