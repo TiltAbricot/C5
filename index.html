@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.6.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.7.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,7 +39,7 @@
     <button id="clear-all">Clear All Shapes</button>
     
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.4.6.0</div>
+    <div id="app-version">Version: 0.4.7.0</div>
   </div>
   <script>
 const svg = document.getElementById("circle");
@@ -205,23 +205,14 @@ document.getElementById("save-shape").onclick = () => {
 document.getElementById("clear-button").onclick = () => { selectedNotes.clear(); update(); };
 document.getElementById("clear-all").onclick = () => { savedShapes.length = 0; updateShapeList(); update(); };
 
-document.getElementById("add-shape-by-id").onclick = () => {
-  const val = parseInt(document.getElementById("shape-id-input").value);
-  if (!isNaN(val)) {
-    const bin = val.toString(2).padStart(12, "0");
-    const notes = new Set();
-    bin.split("").forEach((b, i) => b === "1" && notes.add(circleFifths[i]));
-    savedShapes.push({ notes, color: shapeColors[savedShapes.length % shapeColors.length] });
-    updateShapeList(); update();
-  }
-};
 
 document.getElementById("set-overall-by-id").onclick = () => {
   const val = parseInt(document.getElementById("overall-id-input").value);
   if (!isNaN(val)) {
     const bin = val.toString(2).padStart(12, "0");
-    overallShape = new Set();
-    bin.split("").forEach((b, i) => b === "1" && overallShape.add(circleFifths[i]));
+    const notes = new Set();
+    bin.split("").forEach((b, i) => b === "1" && notes.add(circleFifths[i]));
+    overallShape = notes;
     update();
   }
 };
