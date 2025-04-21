@@ -1,4 +1,4 @@
-<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.12.0) -->
+<!-- Complete Circle of Fifths App with Binary-Based Shape Names (Version 0.4.14.0) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,7 +41,7 @@
     <button id="clear-all">Clear All Shapes</button>
     
     <div class="shape-list" id="shape-list"></div>
-    <div id="app-version">Version: 0.4.12.0</div>
+    <div id="app-version">Version: 0.4.14.0</div>
   </div>
   <script>
 const svg = document.getElementById("circle");
@@ -108,13 +108,13 @@ function drawNotes() {
 
 function updateShapeList() {
   shapeList.innerHTML = "";
-  savedShapes.forEach(({ notes }, index) => {
+  savedShapes.forEach(({ notes, label, readonly }, index) => {
     const shapeID = getShapeBinaryDecimal(notes);
     const div = document.createElement("div");
     div.className = "shape-item";
 
     const span = document.createElement("span");
-    span.textContent = `Shape ${shapeID}`;
+    span.textContent = label || `Shape ${shapeID}`;
     span.style.cursor = "pointer";
     span.onclick = () => {
       selectedNotes.clear();
@@ -145,7 +145,8 @@ function updateShapeList() {
       update();
     };
 
-    div.append(span, rotateLeft, merge, rotateRight, remove);
+    if (!readonly) div.append(span, rotateLeft, merge, rotateRight, remove);
+    else div.append(span);
     shapeList.appendChild(div);
   });
 }
@@ -195,6 +196,10 @@ function update() {
 document.getElementById("toggle-overall-mode").onchange = (e) => {
   useManualOverallShape = e.target.checked;
   document.getElementById("overall-id-wrapper").style.display = useManualOverallShape ? "block" : "none";
+  if (useManualOverallShape) {
+    savedShapes.length = 0;
+    updateShapeList();
+  }
   update();
 };
 
@@ -243,8 +248,8 @@ document.getElementById("find-major-minor").onclick = () => {
     const isMajorInside = [...majorSet].every(n => overallShape.has(n));
     const isMinorInside = [...minorSet].every(n => overallShape.has(n));
 
-    if (isMajorInside) resultShapes.push({ notes: majorSet });
-    if (isMinorInside) resultShapes.push({ notes: minorSet });
+    if (isMajorInside) resultShapes.push({ notes: majorSet, label: `${circleFifths[i]} major`, readonly: true });
+    if (isMinorInside) resultShapes.push({ notes: minorSet, label: `${circleFifths[i]} minor`, readonly: true });
   }
 
   savedShapes.length = 0;
